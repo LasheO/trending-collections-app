@@ -37,6 +37,10 @@ function Login() {
   const [errorMessage, setErrorMessage] = useState('');    // Error message display
   const [successMessage, setSuccessMessage] = useState(''); // Success message display
   const [isLoading, setIsLoading] = useState(false);       // Loading state for form submission
+  const [validationErrors, setValidationErrors] = useState({
+    email: '',
+    password: ''
+  });
 
   /**
    * Handle form submission for both login and registration
@@ -51,8 +55,40 @@ function Login() {
    * 
    * @param {Event} e - The form submission event
    */
+  const validateForm = () => {
+    const errors = {
+      email: '',
+      password: ''
+    };
+    let isValid = true;
+
+    // Email validation
+    if (!email.trim()) {
+      errors.email = 'Username is required';
+      isValid = false;
+    }
+
+    // Password validation
+    if (!password) {
+      errors.password = 'Password is required';
+      isValid = false;
+    } else if (!isLogin && password.length < 8) {
+      errors.password = 'Password must be at least 8 characters long';
+      isValid = false;
+    }
+
+    setValidationErrors(errors);
+    return isValid;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate form before submission
+    if (!validateForm()) {
+      return;
+    }
+    
     setIsLoading(true);
     setErrorMessage('');
     setSuccessMessage('');
@@ -188,7 +224,14 @@ function Login() {
               placeholder="Enter your username"
               margin="normal"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (validationErrors.email) {
+                  setValidationErrors({...validationErrors, email: ''});
+                }
+              }}
+              error={!!validationErrors.email}
+              helperText={validationErrors.email}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -199,13 +242,17 @@ function Login() {
               sx={{
                 '& .MuiOutlinedInput-root': {
                   borderRadius: '10px',
-                  '& fieldset': { borderColor: 'white' },
-                  '&:hover fieldset': { borderColor: 'white' },
-                  '&.Mui-focused fieldset': { borderColor: 'white' },
+                  '& fieldset': { borderColor: validationErrors.email ? 'error.main' : 'white' },
+                  '&:hover fieldset': { borderColor: validationErrors.email ? 'error.main' : 'white' },
+                  '&.Mui-focused fieldset': { borderColor: validationErrors.email ? 'error.main' : 'white' },
                 },
                 '& .MuiInputBase-input': {
                   color: 'white',
                   '&::placeholder': { color: 'rgba(255, 255, 255, 0.7)' },
+                },
+                '& .MuiFormHelperText-root': {
+                  color: 'error.main',
+                  fontWeight: 'bold',
                 },
               }}
             />
@@ -228,7 +275,14 @@ function Login() {
               placeholder="Enter your password"
               margin="normal"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                if (validationErrors.password) {
+                  setValidationErrors({...validationErrors, password: ''});
+                }
+              }}
+              error={!!validationErrors.password}
+              helperText={validationErrors.password}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -239,13 +293,17 @@ function Login() {
               sx={{
                 '& .MuiOutlinedInput-root': {
                   borderRadius: '10px',
-                  '& fieldset': { borderColor: 'white' },
-                  '&:hover fieldset': { borderColor: 'white' },
-                  '&.Mui-focused fieldset': { borderColor: 'white' },
+                  '& fieldset': { borderColor: validationErrors.password ? 'error.main' : 'white' },
+                  '&:hover fieldset': { borderColor: validationErrors.password ? 'error.main' : 'white' },
+                  '&.Mui-focused fieldset': { borderColor: validationErrors.password ? 'error.main' : 'white' },
                 },
                 '& .MuiInputBase-input': {
                   color: 'white',
                   '&::placeholder': { color: 'rgba(255, 255, 255, 0.7)' },
+                },
+                '& .MuiFormHelperText-root': {
+                  color: 'error.main',
+                  fontWeight: 'bold',
                 },
               }}
             />

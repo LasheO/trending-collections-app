@@ -1,15 +1,17 @@
 /**
  * Dashboard Component
  * 
- * This component provides the main user interface for standard users to interact with trending collections.
- * It implements a tabbed interface for viewing, adding, and editing trend data.
+ * This component provides a unified interface for both standard users and admins to interact with trending collections.
+ * It implements a clean single-page layout with role-based access control for different functionality.
  * 
  * Features:
- * - View trends with filtering by original query
- * - Add new trends
+ * - Create new trends with a form at the top of the page
+ * - View trends with filtering by original query and sorting options
  * - Edit existing trends
+ * - Delete trends (admin only)
  * - Success/error notifications
- * - Responsive design with drawer navigation
+ * - Clean, full-width layout with icon in header
+ * - Role-based access control
  */
 
 import { useState, useEffect } from 'react';
@@ -18,12 +20,6 @@ import {
   AppBar, 
   Toolbar, 
   Typography, 
-  IconButton,
-  Drawer,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
   Paper,
   FormControl,
   InputLabel,
@@ -40,25 +36,26 @@ import {
   DialogTitle,
   TextField,
   Alert,
-  Snackbar
+  Snackbar,
+  Divider
 } from '@mui/material';
 import {
-  Menu as MenuIcon,
   ViewList as ViewListIcon,
-  Add as AddIcon,
-  Edit as EditIcon
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Sort as SortIcon
 } from '@mui/icons-material';
 
 function Dashboard() {
   // UI state
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState(0);
-  const drawerWidth = 240;
+  // No drawer needed anymore
+  const [isAdmin, setIsAdmin] = useState(false);
   
   // Data state
   const [trends, setTrends] = useState([]);
   const [queries, setQueries] = useState([]);
   const [selectedQuery, setSelectedQuery] = useState('');
+  const [sortOrder, setSortOrder] = useState('asc'); // 'asc' or 'desc'
   const [error, setError] = useState(null);
   
   // Form state
@@ -71,6 +68,12 @@ function Dashboard() {
     reformulated_queries: '',
     category: ''
   });
+  const [validationErrors, setValidationErrors] = useState({
+    original_query: '',
+    trend_topic: '',
+    description: '',
+    reformulated_queries: ''
+  });
   
   // Notification state
   const [notification, setNotification] = useState({
@@ -79,9 +82,11 @@ function Dashboard() {
     severity: 'success'
   });
 
-  // Fetch trends data when component mounts
+  // Fetch trends data and check admin status when component mounts
   useEffect(() => {
     fetchTrends();
+    const adminStatus = localStorage.getItem('isAdmin') === 'true';
+    setIsAdmin(adminStatus);
   }, []);
 
   /**
@@ -138,20 +143,10 @@ function Dashboard() {
   };
 
 
-  const handleDrawerToggle = () => {
-    setDrawerOpen(!drawerOpen);
-  };
+  // No drawer toggle needed
   
-  const handleTabChange = (newValue) => {
-    setActiveTab(newValue);
-    // Reset current trend when changing tabs to avoid data persistence
-    setCurrentTrend({
-      original_query: '',
-      trend_topic: '',
-      description: '',
-      reformulated_queries: '',
-      category: ''
-    });
+  const handleSortToggle = () => {
+    setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
   };
   
   const handleOpenDialog = (trend = null) => {
@@ -189,9 +184,56 @@ function Dashboard() {
       ...currentTrend,
       [name]: value
     });
+    
+    // Clear validation error for this field when user types
+    if (validationErrors[name]) {
+      setValidationErrors({
+        ...validationErrors,
+        [name]: ''
+      });
+    }
+  };
+
+  const validateTrendForm = () => {
+    const errors = {
+      original_query: '',
+      trend_topic: '',
+      description: '',
+      reformulated_queries: ''
+    };
+    let isValid = true;
+
+    // Check for required fields
+    if (!currentTrend.original_query.trim()) {
+      errors.original_query = 'Original query is required';
+      isValid = false;
+    }
+
+    if (!currentTrend.trend_topic.trim()) {
+      errors.trend_topic = 'Trend topic is required';
+      isValid = false;
+    }
+
+    if (!currentTrend.description.trim()) {
+      errors.description = 'Description is required';
+      isValid = false;
+    }
+
+    if (!currentTrend.reformulated_queries.trim()) {
+      errors.reformulated_queries = 'Reformulated queries are required';
+      isValid = false;
+    }
+
+    setValidationErrors(errors);
+    return isValid;
   };
 
   const handleSubmit = async () => {
+    // Validate form before submission
+    if (!validateTrendForm()) {
+      return;
+    }
+
     try {
       const token = localStorage.getItem('token');
       if (!token) {
@@ -242,54 +284,52 @@ function Dashboard() {
       open: false
     });
   };
+  
+  const handleDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this trend?')) {
+      return;
+    }
 
-  const drawer = (
-    <Box>
-      <Toolbar />
-      <List>
-        <ListItem button onClick={() => handleTabChange(0)}>
-          <ListItemIcon sx={{ color: 'white' }}>
-            <ViewListIcon />
-          </ListItemIcon>
-          <ListItemText primary="View Trends" />
-        </ListItem>
-        <ListItem button onClick={() => handleTabChange(1)}>
-          <ListItemIcon sx={{ color: 'white' }}>
-            <AddIcon />
-          </ListItemIcon>
-          <ListItemText primary="Add Trend" />
-        </ListItem>
-        <ListItem button onClick={() => handleTabChange(2)}>
-          <ListItemIcon sx={{ color: 'white' }}>
-            <EditIcon />
-          </ListItemIcon>
-          <ListItemText primary="Edit Trends" />
-        </ListItem>
-      </List>
-    </Box>
-  );
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        showNotification('No authentication token found', 'error');
+        return;
+      }
+
+      const response = await fetch(`http://localhost:5000/api/trends/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        }
+      });
+
+      if (response.ok) {
+        showNotification('Trend deleted successfully', 'success');
+        fetchTrends();
+      } else {
+        const errorData = await response.json();
+        showNotification(errorData.error || 'Delete operation failed', 'error');
+      }
+    } catch (error) {
+      showNotification('Error connecting to the server', 'error');
+    }
+  };
 
   return (
     <Box sx={{ display: 'flex', bgcolor: '#f5f5f5', minHeight: '100vh' }}>
       <AppBar
         position="fixed"
         sx={{
-          width: { sm: `calc(100% - ${drawerWidth}px)` },
-          ml: { sm: `${drawerWidth}px` },
+          width: '100%',
           bgcolor: '#232f3e'
         }}
       >
         <Toolbar>
-          <IconButton
-            color="inherit"
-            edge="start"
-            onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { sm: 'none' } }}
-          >
-            <MenuIcon />
-          </IconButton>
+          <ViewListIcon sx={{ mr: 2 }} />
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            Trending Collections Dashboard
+            {isAdmin ? 'Admin Dashboard' : 'Trending Collections Dashboard'}
           </Typography>
           <Button 
             color="inherit" 
@@ -305,51 +345,11 @@ function Dashboard() {
       </AppBar>
 
       <Box
-        component="nav"
-        sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
-      >
-        <Drawer
-          variant="temporary"
-          open={drawerOpen}
-          onClose={handleDrawerToggle}
-          ModalProps={{
-            keepMounted: true,
-          }}
-          sx={{
-            display: { xs: 'block', sm: 'none' },
-            '& .MuiDrawer-paper': { 
-              boxSizing: 'border-box', 
-              width: drawerWidth,
-              bgcolor: '#232f3e',
-              color: 'white'
-            },
-          }}
-        >
-          {drawer}
-        </Drawer>
-        <Drawer
-          variant="permanent"
-          sx={{
-            display: { xs: 'none', sm: 'block' },
-            '& .MuiDrawer-paper': { 
-              boxSizing: 'border-box', 
-              width: drawerWidth,
-              bgcolor: '#232f3e',
-              color: 'white'
-            },
-          }}
-          open
-        >
-          {drawer}
-        </Drawer>
-      </Box>
-
-      <Box
         component="main"
         sx={{
           flexGrow: 1,
           p: 3,
-          width: { sm: `calc(100% - ${drawerWidth}px)` },
+          width: '100%',
           mt: 8
         }}
       >
@@ -359,167 +359,141 @@ function Dashboard() {
           </Paper>
         )}
 
+        {/* Create Trend Form */}
+        <Paper sx={{ p: 3, mb: 3 }}>
+          <Typography variant="h6" gutterBottom>Create New Trend</Typography>
+          <TextField
+            margin="dense"
+            name="original_query"
+            label="Original Query"
+            type="text"
+            fullWidth
+            variant="outlined"
+            value={currentTrend.original_query}
+            onChange={handleInputChange}
+            error={!!validationErrors.original_query}
+            helperText={validationErrors.original_query}
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            margin="dense"
+            name="trend_topic"
+            label="Trend Topic"
+            type="text"
+            fullWidth
+            variant="outlined"
+            value={currentTrend.trend_topic}
+            onChange={handleInputChange}
+            error={!!validationErrors.trend_topic}
+            helperText={validationErrors.trend_topic}
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            margin="dense"
+            name="description"
+            label="Description"
+            type="text"
+            fullWidth
+            multiline
+            rows={4}
+            variant="outlined"
+            value={currentTrend.description}
+            onChange={handleInputChange}
+            error={!!validationErrors.description}
+            helperText={validationErrors.description}
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            margin="dense"
+            name="reformulated_queries"
+            label="Reformulated Queries"
+            type="text"
+            fullWidth
+            multiline
+            rows={3}
+            variant="outlined"
+            value={currentTrend.reformulated_queries}
+            onChange={handleInputChange}
+            error={!!validationErrors.reformulated_queries}
+            helperText={validationErrors.reformulated_queries}
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            margin="dense"
+            name="category"
+            label="Category (Optional)"
+            type="text"
+            fullWidth
+            variant="outlined"
+            value={currentTrend.category}
+            onChange={handleInputChange}
+            sx={{ mb: 2 }}
+          />
+          <Button 
+            variant="contained" 
+            onClick={() => {
+              setEditMode(false);
+              handleSubmit();
+            }}
+          >
+            Create Trend
+          </Button>
+        </Paper>
 
+        {/* Divider */}
+        <Box sx={{ borderBottom: 1, borderColor: 'divider', my: 3 }} />
 
-        {/* View Trends Tab */}
-        {activeTab === 0 && (
-          <>
-            <Paper sx={{ p: 2, mb: 2 }}>
-              <FormControl fullWidth>
-                <InputLabel id="query-select-label">Filter by Original Query</InputLabel>
-                <Select
-                  labelId="query-select-label"
-                  id="query-select"
-                  value={selectedQuery}
-                  label="Filter by Original Query"
-                  onChange={(e) => setSelectedQuery(e.target.value)}
-                >
-                  <MenuItem value="">
-                    <em>All Queries</em>
-                  </MenuItem>
-                  {queries.map((query, index) => (
-                    <MenuItem key={index} value={query}>
-                      {query}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Paper>
-
-            <Grid container spacing={3}>
-              {trends
-                .filter(trend => !selectedQuery || trend.original_query === selectedQuery)
-                .map((trend) => (
-                  <Grid item xs={12} md={6} key={trend.id}>
-                    <Card sx={{ 
-                      borderRadius: '16px', 
-                      width: '100%',
-                      display: 'flex',
-                      flexDirection: 'column'
-                    }}>
-                      <CardContent sx={{ 
-                        flexGrow: 1,
-                        overflow: 'auto'
-                      }}>
-                        <Typography variant="h6" gutterBottom>
-                          {trend.trend_topic}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary" paragraph>
-                          Original Query: {trend.original_query}
-                        </Typography>
-                        <Typography variant="body2" paragraph sx={{ 
-                          maxHeight: '150px',
-                          overflow: 'auto'
-                        }}>
-                          {trend.description}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          Reformulated Queries:
-                        </Typography>
-                        <Typography variant="body2" sx={{ 
-                          maxHeight: '100px',
-                          overflow: 'auto'
-                        }}>
-                          {trend.reformulated_queries}
-                        </Typography>
-                        {trend.category && (
-                          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                            Category: {trend.category}
-                          </Typography>
-                        )}
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                ))}
-            </Grid>
-          </>
-        )}
-
-        {/* Add Trend Tab */}
-        {activeTab === 1 && (
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>Add New Trend</Typography>
-            <TextField
-              margin="dense"
-              name="original_query"
-              label="Original Query"
-              type="text"
-              fullWidth
-              variant="outlined"
-              value={currentTrend.original_query}
-              onChange={handleInputChange}
-              sx={{ mb: 2 }}
-            />
-            <TextField
-              margin="dense"
-              name="trend_topic"
-              label="Trend Topic"
-              type="text"
-              fullWidth
-              variant="outlined"
-              value={currentTrend.trend_topic}
-              onChange={handleInputChange}
-              sx={{ mb: 2 }}
-            />
-            <TextField
-              margin="dense"
-              name="description"
-              label="Description"
-              type="text"
-              fullWidth
-              multiline
-              rows={4}
-              variant="outlined"
-              value={currentTrend.description}
-              onChange={handleInputChange}
-              sx={{ mb: 2 }}
-            />
-            <TextField
-              margin="dense"
-              name="reformulated_queries"
-              label="Reformulated Queries"
-              type="text"
-              fullWidth
-              multiline
-              rows={3}
-              variant="outlined"
-              value={currentTrend.reformulated_queries}
-              onChange={handleInputChange}
-              sx={{ mb: 2 }}
-            />
-            <TextField
-              margin="dense"
-              name="category"
-              label="Category (Optional)"
-              type="text"
-              fullWidth
-              variant="outlined"
-              value={currentTrend.category}
-              onChange={handleInputChange}
-              sx={{ mb: 2 }}
-            />
-            <Button 
-              variant="contained" 
-              onClick={() => {
-                setEditMode(false);
-                handleSubmit();
-              }}
+        {/* Filter and Sort Controls */}
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <FormControl sx={{ width: '300px' }}>
+            <InputLabel id="query-select-label">Filter by Original Query</InputLabel>
+            <Select
+              labelId="query-select-label"
+              id="query-select"
+              value={selectedQuery}
+              label="Filter by Original Query"
+              onChange={(e) => setSelectedQuery(e.target.value)}
+              size="small"
             >
-              Create Trend
-            </Button>
-          </Paper>
-        )}
+              <MenuItem value="">
+                <em>All Queries</em>
+              </MenuItem>
+              {queries.map((query, index) => (
+                <MenuItem key={index} value={query}>
+                  {query}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          
+          <Button 
+            variant="outlined" 
+            startIcon={<SortIcon />}
+            onClick={handleSortToggle}
+          >
+            Sort {sortOrder === 'asc' ? 'A-Z' : 'Z-A'}
+          </Button>
+        </Box>
 
-        {/* Edit Trends Tab */}
-        {activeTab === 2 && (
-          <Grid container spacing={3}>
-            {trends.map((trend) => (
-              <Grid item xs={12} md={6} key={trend.id}>
+        {/* Trends Grid */}
+        <Grid container spacing={3} sx={{ justifyContent: 'center' }}>
+          {trends
+            .filter(trend => !selectedQuery || trend.original_query === selectedQuery)
+            .sort((a, b) => {
+              if (sortOrder === 'asc') {
+                return a.trend_topic.localeCompare(b.trend_topic);
+              } else {
+                return b.trend_topic.localeCompare(a.trend_topic);
+              }
+            })
+            .map((trend) => (
+              <Grid item xs={12} md={4} key={trend.id} sx={{ width: '350px' }}>
                 <Card sx={{ 
                   borderRadius: '16px', 
                   width: '100%',
                   display: 'flex',
-                  flexDirection: 'column'
+                  flexDirection: 'column',
+                  height: 280
                 }}>
                   <CardContent sx={{ 
                     flexGrow: 1,
@@ -528,28 +502,57 @@ function Dashboard() {
                     <Typography variant="h6" gutterBottom>
                       {trend.trend_topic}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary" paragraph>
+                    <Typography variant="body2" color="text.secondary">
                       Original Query: {trend.original_query}
                     </Typography>
-                    <Typography variant="body2" paragraph>
-                      {trend.description.substring(0, 100)}...
+                    <Typography variant="body2" sx={{ 
+                      maxHeight: '100px',
+                      overflow: 'auto',
+                      mb: 2,
+                      mt: 1
+                    }}>
+                      {trend.description}
                     </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Reformulated Queries:
+                    </Typography>
+                    <Typography variant="body2" sx={{ 
+                      maxHeight: '60px',
+                      overflow: 'auto'
+                    }}>
+                      {trend.reformulated_queries}
+                    </Typography>
+                    {trend.category && (
+                      <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                        Category: {trend.category}
+                      </Typography>
+                    )}
                   </CardContent>
                   <CardActions>
                     <Button 
-                      fullWidth
                       variant="contained"
                       startIcon={<EditIcon />}
                       onClick={() => handleOpenDialog(trend)}
+                      sx={{ flexGrow: 1 }}
                     >
                       Edit
                     </Button>
+                    {isAdmin && (
+                      <Button 
+                        variant="contained"
+                        color="error"
+                        startIcon={<DeleteIcon />}
+                        onClick={() => handleDelete(trend.id)}
+                        sx={{ flexGrow: 1 }}
+                      >
+                        Delete
+                      </Button>
+                    )}
                   </CardActions>
                 </Card>
               </Grid>
             ))}
-          </Grid>
-        )}
+        </Grid>
 
         <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
           <DialogTitle>{editMode ? 'Edit Trend' : 'Add New Trend'}</DialogTitle>
@@ -563,6 +566,8 @@ function Dashboard() {
               variant="outlined"
               value={currentTrend.original_query}
               onChange={handleInputChange}
+              error={!!validationErrors.original_query}
+              helperText={validationErrors.original_query}
               sx={{ mb: 2 }}
             />
             <TextField
@@ -574,6 +579,8 @@ function Dashboard() {
               variant="outlined"
               value={currentTrend.trend_topic}
               onChange={handleInputChange}
+              error={!!validationErrors.trend_topic}
+              helperText={validationErrors.trend_topic}
               sx={{ mb: 2 }}
             />
             <TextField
@@ -587,6 +594,8 @@ function Dashboard() {
               variant="outlined"
               value={currentTrend.description}
               onChange={handleInputChange}
+              error={!!validationErrors.description}
+              helperText={validationErrors.description}
               sx={{ mb: 2 }}
             />
             <TextField
@@ -600,6 +609,8 @@ function Dashboard() {
               variant="outlined"
               value={currentTrend.reformulated_queries}
               onChange={handleInputChange}
+              error={!!validationErrors.reformulated_queries}
+              helperText={validationErrors.reformulated_queries}
               sx={{ mb: 2 }}
             />
             <TextField
