@@ -13,7 +13,7 @@ trend_data = [
     },
     {
         "original_query": "Socks for Men",
-        "trend_topic": "Super hero Ankle",
+        "trend_topic": "Superhero Ankle",
         "description": "White ankle socks featuring symbols of popular superheroes.",
         "reformulated_queries": """White Ankle Socks Superman, Men's Ankle Socks Marvel, 
             DC Ankle Socks For Men, Batman White Ankle Socks, Superhero Themed Ankle Socks""",

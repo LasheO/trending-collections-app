@@ -190,9 +190,19 @@ function Login() {
             border: '1px solid rgba(255, 255, 255, 0.3)',
           }}
         >
-          <Typography variant="h4" align="center" gutterBottom sx={{ color: 'white', fontWeight: 'bold' }}>
-            {isLogin ? 'Login' : 'Register'}
-          </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2 }}>
+            <img 
+              src="/trending_logo.svg" 
+              alt="Trending Collections Logo" 
+              style={{ height: '80px', marginBottom: '16px' }} 
+            />
+            <Typography variant="h4" align="center" gutterBottom sx={{ color: 'white', fontWeight: 'bold' }}>
+              {isLogin ? 'Login' : 'Register'}
+            </Typography>
+            <Typography variant="h6" align="center" sx={{ color: 'white', mb: 2 }}>
+              Trending Collections
+            </Typography>
+          </Box>
           
           {errorMessage && (
             <Alert severity="error" sx={{ mt: 2, mb: 2, borderRadius: '10px' }}>

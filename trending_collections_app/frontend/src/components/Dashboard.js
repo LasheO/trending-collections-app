@@ -43,7 +43,8 @@ import {
   ViewList as ViewListIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
-  Sort as SortIcon
+  Sort as SortIcon,
+  Logout as LogoutIcon
 } from '@mui/icons-material';
 
 function Dashboard() {
@@ -327,12 +328,19 @@ function Dashboard() {
         }}
       >
         <Toolbar>
-          <ViewListIcon sx={{ mr: 2 }} />
-          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            {isAdmin ? 'Admin Dashboard' : 'Trending Collections Dashboard'}
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
+            <img 
+              src="/trending_logo.svg" 
+              alt="Trending Collections Logo" 
+              style={{ height: '40px', marginRight: '16px' }} 
+            />
+            <Typography variant="h6" noWrap component="div">
+              {isAdmin ? 'Trending Collections Admin' : 'Trending Collections'}
+            </Typography>
+          </Box>
           <Button 
             color="inherit" 
+            startIcon={<LogoutIcon />}
             onClick={() => {
               localStorage.removeItem('token');
               localStorage.removeItem('isAdmin');
