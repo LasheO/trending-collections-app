@@ -5,12 +5,7 @@
 import '@testing-library/jest-dom';
 
 // Mock fetch API
-global.fetch = jest.fn(() => 
-  Promise.resolve({
-    ok: true,
-    json: () => Promise.resolve([])
-  })
-);
+global.fetch = jest.fn();
 
 // Mock localStorage
 const localStorageMock = {
