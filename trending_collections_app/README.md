@@ -6,11 +6,21 @@ A web application for managing trending collections with user and admin roles.
 
 ### Backend Tests
 
-To run the backend tests:
+To set up and run the backend tests:
 
 ```bash
 cd trending_collections_app/backend
+./setup_tests.sh
+source venv/bin/activate
 python run_tests.py
+```
+
+Alternatively, you can use pytest directly:
+
+```bash
+cd trending_collections_app/backend
+source venv/bin/activate
+pytest -v
 ```
 
 ### Frontend Tests
@@ -19,7 +29,15 @@ To run the frontend tests:
 
 ```bash
 cd trending_collections_app/frontend
-npm test
+./run_tests.sh
+```
+
+Or manually:
+
+```bash
+cd trending_collections_app/frontend
+npm install
+CI=true npm test
 ```
 
 To run a specific test file:
