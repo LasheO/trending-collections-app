@@ -17,6 +17,6 @@ def create_admin(email, password):
         print(f"Admin user {email} created successfully")
 
 if __name__ == "__main__":
-    admin_email = "admin"
+    admin_email = "admin@example.com"
     admin_password = "adminpassword123"
     create_admin(admin_email, admin_password)

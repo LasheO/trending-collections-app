@@ -19,6 +19,7 @@ from flask_cors import CORS
 from models import db, User, TrendingCollection
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity, verify_jwt_in_request
 from flask_jwt_extended.exceptions import NoAuthorizationError, InvalidHeaderError, JWTDecodeError
+import re
 
 # Initialize Flask application
 app = Flask(__name__)
@@ -31,6 +32,9 @@ app.config['JWT_ACCESS_TOKEN_EXPIRES'] = False    # Tokens don't expire (for dev
 db.init_app(app)  # Initialize database with app
 jwt = JWTManager(app)  # Initialize JWT manager
 
+# Email validation pattern
+EMAIL_PATTERN = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+
 # Create database tables if they don't exist
 with app.app_context():
     db.create_all()
@@ -42,6 +46,7 @@ def register():
     
     Registers a new user in the system with the provided email and password.
     Checks if the email is already registered before creating a new user.
+    Validates email format.
     
     Request body:
     {
@@ -51,9 +56,13 @@ def register():
     
     Returns:
         201: User registered successfully
-        400: Email already registered
+        400: Email already registered or invalid email format
     """
     data = request.get_json()
+    
+    # Validate email format
+    if not EMAIL_PATTERN.match(data['email']):
+        return jsonify({'error': 'Invalid email format'}), 400
     
     # Check if email is already registered
     if User.query.filter_by(email=data['email']).first():
@@ -83,9 +92,15 @@ def login():
     
     Returns:
         200: {token, is_admin} - Authentication successful
+        400: Invalid email format
         401: Invalid credentials
     """
     data = request.get_json()
+    
+    # Validate email format
+    if not EMAIL_PATTERN.match(data['email']):
+        return jsonify({'error': 'Invalid email format'}), 400
+    
     user = User.query.filter_by(email=data['email']).first()
     
     # Verify user credentials

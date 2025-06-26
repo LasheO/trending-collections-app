@@ -64,8 +64,15 @@ function Login() {
 
     // Email validation
     if (!email.trim()) {
-      errors.email = 'Username is required';
+      errors.email = 'Email is required';
       isValid = false;
+    } else {
+      // Email format validation using regex
+      const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+      if (!emailPattern.test(email)) {
+        errors.email = 'Please enter a valid email address';
+        isValid = false;
+      }
     }
 
     // Password validation
@@ -227,11 +234,12 @@ function Login() {
                 letterSpacing: '0.5px'
               }}
             >
-              Username
+              Email
             </Typography>
             <TextField
               fullWidth
-              placeholder="Enter your username"
+              type="email"
+              placeholder="Enter your email"
               margin="normal"
               value={email}
               onChange={(e) => {
