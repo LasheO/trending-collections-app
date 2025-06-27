@@ -23,7 +23,7 @@ from flask_jwt_extended.exceptions import NoAuthorizationError, InvalidHeaderErr
 import re
 
 # Initialize Flask application
-app = Flask(__name__, static_folder='static', static_url_path='')
+app = Flask(__name__, static_folder='static')
 CORS(app)  # Enable Cross-Origin Resource Sharing
 
 # Application Configuration
@@ -295,9 +295,9 @@ def health_check():
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
 # Serve static files
-@app.route('/<path:filename>')
-def serve_static(filename):
-    return send_from_directory(app.static_folder, filename)
+@app.route('/static/<path:path>')
+def serve_static(path):
+    return send_from_directory(app.static_folder, path)
 
 # Serve React App - catch-all route
 @app.route('/', defaults={'path': ''})
@@ -306,13 +306,13 @@ def serve(path):
     # For API routes, let them be handled by the appropriate route handlers
     if path.startswith('api/'):
         return {"error": "Not found"}, 404
-        
+    
+    # Check if the path exists as a file in the static folder
+    if path and os.path.exists(os.path.join(app.static_folder, path)):
+        return send_from_directory(app.static_folder, path)
+    
     # For all other routes, serve the React app's index.html
-    try:
-        return send_from_directory(app.static_folder, 'index.html')
-    except Exception as e:
-        print(f"Error serving index.html: {str(e)}")
-        return f"Error serving application: {str(e)}", 500
+    return send_from_directory(app.static_folder, 'index.html')
 
 if __name__ == '__main__':
     app.run(debug=True)

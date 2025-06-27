@@ -15,22 +15,12 @@ npm run build
 # Create static directory and copy files correctly
 rm -rf ../backend/static
 mkdir -p ../backend/static
+
+# Copy the build files directly to static folder
 cp -r build/* ../backend/static/
 
-# Create a simple index.html file directly in the static folder as a fallback
-echo '<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>Trending Collections</title>
-  <script>
-    // Redirect to the actual index.html
-    window.location.href = "/index.html";
-  </script>
-</head>
-<body>
-  <p>Loading Trending Collections...</p>
-</body>
-</html>' > ../backend/static/index.html
+# Debug: List files in static directory
+echo "Files in static directory:"
+ls -la ../backend/static/
 
 echo "Build completed successfully"
