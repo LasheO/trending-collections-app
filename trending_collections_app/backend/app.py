@@ -22,8 +22,8 @@ from flask_jwt_extended import JWTManager, create_access_token, jwt_required, ge
 from flask_jwt_extended.exceptions import NoAuthorizationError, InvalidHeaderError, JWTDecodeError
 import re
 
-# Initialize Flask application
-app = Flask(__name__, static_folder='static')
+# Initialize Flask application with static folder pointing to the React build
+app = Flask(__name__, static_folder='static', static_url_path='')
 CORS(app)  # Enable Cross-Origin Resource Sharing
 
 # Application Configuration
@@ -283,21 +283,40 @@ def health_check():
         except:
             static_files = []
         
+        # Check for nested static directory
+        nested_static_path = os.path.join(app.static_folder, 'static')
+        nested_static_exists = os.path.exists(nested_static_path)
+        
+        # List files in nested static folder
+        nested_static_files = []
+        if nested_static_exists:
+            try:
+                nested_static_files = os.listdir(nested_static_path)
+            except:
+                pass
+        
+        # Check for specific JS and CSS files
+        js_file_path = os.path.join(app.static_folder, 'static/js/main.4ce46d40.js')
+        css_file_path = os.path.join(app.static_folder, 'static/css/main.e6c13ad2.css')
+        js_exists = os.path.exists(js_file_path)
+        css_exists = os.path.exists(css_file_path)
+        
         return jsonify({
             'status': 'ok',
             'database': db_ok,
             'static_files': static_ok,
             'static_path': app.static_folder,
             'index_path': index_path,
-            'static_files_list': static_files
+            'static_files_list': static_files,
+            'nested_static_exists': nested_static_exists,
+            'nested_static_files': nested_static_files,
+            'js_exists': js_exists,
+            'css_exists': css_exists,
+            'js_path': js_file_path,
+            'css_path': css_file_path
         })
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
-
-# Serve static files
-@app.route('/static/<path:path>')
-def serve_static(path):
-    return send_from_directory(app.static_folder, path)
 
 # Serve React App - catch-all route
 @app.route('/', defaults={'path': ''})
@@ -311,8 +330,35 @@ def serve(path):
     if path and os.path.exists(os.path.join(app.static_folder, path)):
         return send_from_directory(app.static_folder, path)
     
-    # For all other routes, serve the React app's index.html
-    return send_from_directory(app.static_folder, 'index.html')
+    # Check if the path exists in the nested static folder
+    nested_static = os.path.join(app.static_folder, 'static')
+    if path and os.path.exists(os.path.join(nested_static, path)):
+        return send_from_directory(nested_static, path)
+    
+    # Special handling for static/js and static/css paths
+    if path.startswith('static/'):
+        parts = path.split('/')
+        if len(parts) > 1:
+            # Try to serve from the nested static directory
+            try:
+                return send_from_directory(os.path.join(app.static_folder, 'static'), '/'.join(parts[1:]))
+            except:
+                pass
+    
+    # For all other routes, try to serve the React app's index.html
+    try:
+        if os.path.exists(os.path.join(app.static_folder, 'index.html')):
+            return send_from_directory(app.static_folder, 'index.html')
+    except Exception as e:
+        print(f"Error serving index.html: {str(e)}")
+    
+    # If React's index.html doesn't exist or fails, serve the fallback page
+    fallback_path = os.path.join(os.path.dirname(app.static_folder), 'static_fallback', 'index.html')
+    if os.path.exists(fallback_path):
+        return send_from_directory(os.path.dirname(fallback_path), 'index.html')
+    
+    # Last resort - return a simple message
+    return "Application Error: Could not load the application. Please check server logs."
 
 if __name__ == '__main__':
     app.run(debug=True)

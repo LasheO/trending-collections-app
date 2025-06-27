@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Trending Collections</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #232f3e;
+        }
+        pre {
+            background-color: #f0f0f0;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        .error {
+            color: #c62828;
+            background-color: #ffebee;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Trending Collections - Debug Page</h1>
+        
+        <div class="error">
+            <p><strong>Note:</strong> This is a fallback page. If you're seeing this, it means the React app didn't load correctly.</p>
+        </div>
+        
+        <h2>Possible Issues:</h2>
+        <ol>
+            <li>Static files (JS/CSS) are not being served correctly</li>
+            <li>The React build process didn't complete successfully</li>
+            <li>The static files are in a different location than expected</li>
+        </ol>
+        
+        <h2>Debugging Steps:</h2>
+        <ol>
+            <li>Check the browser console for errors (F12 or right-click > Inspect > Console)</li>
+            <li>Visit <a href="/api/health">/api/health</a> to see information about static files</li>
+            <li>Check the server logs for any errors during the build process</li>
+        </ol>
+        
+        <h2>Login Credentials:</h2>
+        <ul>
+            <li><strong>Regular user:</strong> user@example.com / userpassword123</li>
+            <li><strong>Admin user:</strong> admin@example.com / adminpassword123</li>
+        </ul>
+    </div>
+</body>
+</html>
