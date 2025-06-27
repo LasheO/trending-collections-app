@@ -2,6 +2,14 @@
 
 A web application for managing trending collections with user and admin roles.
 
+## Live Demo
+
+The application is deployed and accessible at: [https://trending-collections-app.onrender.com/](https://trending-collections-app.onrender.com/)
+
+### Demo Credentials
+- Regular user: user@example.com / userpassword123
+- Admin user: admin@example.com / adminpassword123
+
 ## Features
 
 - User authentication with role-based access control
@@ -9,7 +17,7 @@ A web application for managing trending collections with user and admin roles.
 - Filter and sort functionality for easy data management
 - Responsive design for desktop and mobile use
 
-## Running the Application
+## Local Development
 
 ### Prerequisites
 
@@ -37,7 +45,7 @@ A web application for managing trending collections with user and admin roles.
 
 4. Initialize the database:
    ```bash
-   python populate_db.py
+   python init_db.py
    ```
 
 5. Start the backend server:
@@ -63,13 +71,6 @@ A web application for managing trending collections with user and admin roles.
    npm start
    ```
    The frontend will run on http://localhost:3000
-
-### Accessing the Application
-
-1. Open a web browser and navigate to http://localhost:3000
-2. Login with the following credentials:
-   - Regular user: user@example.com / userpassword123
-   - Admin user: admin@example.com / adminpassword123
 
 ## Running Tests
 
@@ -106,12 +107,6 @@ A web application for managing trending collections with user and admin roles.
    npm test -- Dashboard.test.js
    ```
 
-3. Run tests in interactive mode:
-   ```bash
-   cd trending_collections_app/frontend
-   npm test
-   ```
-
 ## Test Coverage
 
 ### Backend Tests
@@ -130,9 +125,17 @@ The frontend tests cover:
 - Form validation and submission
 - Admin-specific feature visibility
 
+## Deployment
+
+The application is deployed on Render.com as a single web service that serves both the backend API and frontend static files. The deployment process:
+
+1. Builds the React frontend
+2. Copies the built files to the Flask backend's static directory
+3. Initializes the database with sample data
+4. Starts the Flask application with Gunicorn
+
 ## Troubleshooting
 
-- If the backend fails to start, ensure that port 5000 is not in use by another application
-- If the frontend fails to connect to the backend, verify that the backend server is running and accessible
-- For database issues, try removing the app.db file and running populate_db.py again to recreate the database
-- If tests fail with dependency errors, ensure all required packages are installed
+- For database issues in the deployed application, check the application logs on Render.com
+- If the application shows a blank screen, try clearing your browser cache or opening in an incognito window
+- For local development issues, ensure all dependencies are installed and ports are available

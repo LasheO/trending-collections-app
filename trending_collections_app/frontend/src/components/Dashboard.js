@@ -36,11 +36,9 @@ import {
   DialogTitle,
   TextField,
   Alert,
-  Snackbar,
-  Divider
+  Snackbar
 } from '@mui/material';
 import {
-  ViewList as ViewListIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
   Sort as SortIcon,
@@ -111,7 +109,7 @@ function Dashboard() {
       }
 
       // Make authenticated API request
-      const response = await fetch('http://localhost:5000/api/trends', {
+      const response = await fetch('/api/trends', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -243,8 +241,8 @@ function Dashboard() {
       }
 
       const url = editMode 
-        ? `http://localhost:5000/api/trends/${currentTrend.id}`
-        : 'http://localhost:5000/api/trends';
+        ? `/api/trends/${currentTrend.id}`
+        : '/api/trends';
       
       const method = editMode ? 'PUT' : 'POST';
 
@@ -298,7 +296,7 @@ function Dashboard() {
         return;
       }
 
-      const response = await fetch(`http://localhost:5000/api/trends/${id}`, {
+      const response = await fetch(`/api/trends/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
