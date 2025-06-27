@@ -23,7 +23,7 @@ from flask_jwt_extended.exceptions import NoAuthorizationError, InvalidHeaderErr
 import re
 
 # Initialize Flask application
-app = Flask(__name__, static_folder='static')
+app = Flask(__name__, static_folder='static', static_url_path='')
 CORS(app)  # Enable Cross-Origin Resource Sharing
 
 # Application Configuration
@@ -274,25 +274,35 @@ def health_check():
             print(f"Database error: {str(e)}")
         
         # Check if static files exist
-        static_ok = os.path.exists(os.path.join(app.static_folder, 'index.html'))
+        index_path = os.path.join(app.static_folder, 'index.html')
+        static_ok = os.path.exists(index_path)
+        
+        # List files in static folder
+        try:
+            static_files = os.listdir(app.static_folder)
+        except:
+            static_files = []
         
         return jsonify({
             'status': 'ok',
             'database': db_ok,
             'static_files': static_ok,
-            'static_path': app.static_folder
+            'static_path': app.static_folder,
+            'index_path': index_path,
+            'static_files_list': static_files
         })
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
-# Serve React App
+# Serve static files
+@app.route('/<path:filename>')
+def serve_static(filename):
+    return send_from_directory(app.static_folder, filename)
+
+# Serve React App - catch-all route
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve(path):
-    # First, try to serve the path as a static file
-    if path and os.path.exists(os.path.join(app.static_folder, path)):
-        return send_from_directory(app.static_folder, path)
-    
     # For API routes, let them be handled by the appropriate route handlers
     if path.startswith('api/'):
         return {"error": "Not found"}, 404
