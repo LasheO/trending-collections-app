@@ -14,7 +14,8 @@ Author: Lashe Onamusi
 Date: [16/06/25]
 """
 
-from flask import Flask, jsonify, request
+import os
+from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 from models import db, User, TrendingCollection
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity, verify_jwt_in_request
@@ -22,12 +23,12 @@ from flask_jwt_extended.exceptions import NoAuthorizationError, InvalidHeaderErr
 import re
 
 # Initialize Flask application
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static')
 CORS(app)  # Enable Cross-Origin Resource Sharing
 
 # Application Configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'  # SQLite database path
-app.config['JWT_SECRET_KEY'] = 'your-secret-key'  # JWT secret key (should be changed in production)
+app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'your-secret-key')  # JWT secret key
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = False    # Tokens don't expire (for development)
 db.init_app(app)  # Initialize database with app
 jwt = JWTManager(app)  # Initialize JWT manager
@@ -39,6 +40,7 @@ EMAIL_PATTERN = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
 with app.app_context():
     db.create_all()
 
+# API Routes
 @app.route('/api/register', methods=['POST'])
 def register():
     """
@@ -258,6 +260,15 @@ def test_trends():
     except Exception as e:
         print(f"Error in test_trends: {str(e)}")  # Server-side logging
         return jsonify({'error': str(e)}), 500
+
+# Serve React App
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve(path):
+    if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
+        return send_from_directory(app.static_folder, path)
+    else:
+        return send_from_directory(app.static_folder, 'index.html')
 
 if __name__ == '__main__':
     app.run(debug=True)
