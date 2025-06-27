@@ -342,7 +342,7 @@ function Dashboard() {
             onClick={() => {
               localStorage.removeItem('token');
               localStorage.removeItem('isAdmin');
-              window.location.href = '/login';
+              window.location.href = '/';
             }}
           >
             Logout
@@ -517,7 +517,7 @@ function Dashboard() {
                       mb: 2,
                       mt: 1
                     }}>
-                      {trend.description}
+                      {trend.description || 'No description available'}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       Reformulated Queries:
