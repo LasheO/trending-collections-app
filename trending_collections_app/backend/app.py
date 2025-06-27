@@ -261,14 +261,48 @@ def test_trends():
         print(f"Error in test_trends: {str(e)}")  # Server-side logging
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    """Health check endpoint to verify the API is running"""
+    try:
+        # Check if we can connect to the database
+        db_ok = False
+        try:
+            db.session.execute('SELECT 1')
+            db_ok = True
+        except Exception as e:
+            print(f"Database error: {str(e)}")
+        
+        # Check if static files exist
+        static_ok = os.path.exists(os.path.join(app.static_folder, 'index.html'))
+        
+        return jsonify({
+            'status': 'ok',
+            'database': db_ok,
+            'static_files': static_ok,
+            'static_path': app.static_folder
+        })
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
 # Serve React App
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve(path):
-    if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
+    # First, try to serve the path as a static file
+    if path and os.path.exists(os.path.join(app.static_folder, path)):
         return send_from_directory(app.static_folder, path)
-    else:
+    
+    # For API routes, let them be handled by the appropriate route handlers
+    if path.startswith('api/'):
+        return {"error": "Not found"}, 404
+        
+    # For all other routes, serve the React app's index.html
+    try:
         return send_from_directory(app.static_folder, 'index.html')
+    except Exception as e:
+        print(f"Error serving index.html: {str(e)}")
+        return f"Error serving application: {str(e)}", 500
 
 if __name__ == '__main__':
     app.run(debug=True)

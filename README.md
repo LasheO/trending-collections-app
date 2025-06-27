@@ -68,8 +68,8 @@ A web application for managing trending collections with user and admin roles.
 
 1. Open a web browser and navigate to http://localhost:3000
 2. Login with the following credentials:
-   - Regular user: user@example.com / password123
-   - Admin user: admin@example.com / admin123
+   - Regular user: user@example.com / userpassword123
+   - Admin user: admin@example.com / adminpassword123
 
 ## Running Tests
 
